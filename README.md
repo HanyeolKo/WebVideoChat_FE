@@ -1,73 +1,44 @@
-# React + TypeScript + Vite
+# WebVideoChat_FE
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+## On-premise 배포 (Ubuntu 24.04.2 LTS, docker compose, 태그 기준)
 
-Currently, two official plugins are available:
+### 1) 애플리케이션 구조
+- Vite 빌드 산출물(`dist`)을 Nginx 컨테이너에서 정적 파일로 서빙
+- 호스트 Nginx(443 리버스 프록시)가 `127.0.0.1:3000`으로 프록시
+- 컨테이너 실행 경로: `/home/deploy/frontend`
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+### 2) 서버 준비
+- 서버에 `deploy` 계정으로 SSH 접속 가능해야 함
+- 서버에 Docker / Docker Compose 플러그인 설치 필요
+- `/home/deploy/frontend` 경로에 docker-compose 파일이 위치함
 
-## React Compiler
+### 3) GitHub Secrets 설정
+- `DEPLOY_HOST`: 온프레미스 서버 주소
+- `DEPLOY_PORT`: SSH 포트(예: 22)
+- `DEPLOY_USERNAME`: `deploy`
+- `DEPLOY_SSH_KEY`: deploy 계정 개인키
+- `GHCR_USERNAME`: GHCR 접근 계정
+- `GHCR_TOKEN`: GHCR 패키지 read/write 권한 토큰
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+### 4) 태그 배포
+- `v*` 형식 태그 푸시 시 `.github/workflows/deploy-tag.yml` 실행
+- 워크플로우가 Docker 이미지를 GHCR에 푸시하고, 서버에서 `docker compose pull && up -d` 수행
 
-## Expanding the ESLint configuration
+### 5) 호스트 Nginx(443) 리버스 프록시 예시
+```nginx
+server {
+    listen 443 ssl;
+    server_name your.domain;
 
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
+    ssl_certificate     /etc/letsencrypt/live/your.domain/fullchain.pem;
+    ssl_certificate_key /etc/letsencrypt/live/your.domain/privkey.pem;
 
-```js
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-
-      // Remove tseslint.configs.recommended and replace with this
-      tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      tseslint.configs.stylisticTypeChecked,
-
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
-```
-
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
-
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
-
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+    location / {
+        proxy_pass http://127.0.0.1:3000;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+    }
+}
 ```

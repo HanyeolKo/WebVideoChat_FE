@@ -1,0 +1,7 @@
+services:
+  frontend:
+    image: ${IMAGE_NAME:-ghcr.io/hanyeolko/webvideochat-fe}:${IMAGE_TAG:-latest}
+    container_name: webvideochat-fe
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:${FRONTEND_PORT:-3000}:80"
