@@ -51,6 +51,8 @@ jobs:
             mkdir -p /home/deploy/frontend
             cd /home/deploy/frontend
             printf "IMAGE_TAG=%s\n" "$IMAGE_TAG" > .env
-            docker login ghcr.io -u "$GHCR_USERNAME" --password-stdin <<< "$GHCR_TOKEN"
-            docker compose pull
-            docker compose up -d --remove-orphans
+            docker compose down
+            docker compose build --no-cache
+            docker compose up -d
+            sleep 5
+            docker compose ps
