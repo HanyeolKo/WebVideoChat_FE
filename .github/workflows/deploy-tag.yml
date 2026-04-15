@@ -38,16 +38,6 @@ jobs:
             ${{ env.IMAGE_NAME }}:${{ github.ref_name }}
             ${{ env.IMAGE_NAME }}:latest
 
-      - name: Copy docker-compose file to server
-        uses: appleboy/scp-action@v1.0.0
-        with:
-          host: ${{ secrets.DEPLOY_HOST }}
-          username: ${{ secrets.DEPLOY_USERNAME }}
-          key: ${{ secrets.DEPLOY_SSH_KEY }}
-          port: ${{ secrets.DEPLOY_PORT }}
-          source: "docker-compose.yml"
-          target: "/home/deploy/frontend"
-
       - name: Deploy on on-premise server
         uses: appleboy/ssh-action@v1.2.0
         env:

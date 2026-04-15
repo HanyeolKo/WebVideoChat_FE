@@ -10,7 +10,7 @@
 ### 2) 서버 준비
 - 서버에 `deploy` 계정으로 SSH 접속 가능해야 함
 - 서버에 Docker / Docker Compose 플러그인 설치 필요
-- `/home/deploy/frontend` 경로에 docker-compose 파일이 위치함
+- `/home/deploy/frontend` 경로에 기존에 구성된 `docker-compose.yml`이 위치해 있어야 함
 
 ### 3) GitHub Secrets 설정
 - `DEPLOY_HOST`: 온프레미스 서버 주소
