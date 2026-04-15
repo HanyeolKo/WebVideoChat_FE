@@ -41,10 +41,6 @@ jobs:
 
       - name: Deploy on on-premise server
         uses: appleboy/ssh-action@v1.2.0
-        env:
-          IMAGE_TAG: ${{ github.ref_name }}
-          GHCR_USERNAME: ${{ secrets.GHCR_USERNAME }}
-          GHCR_TOKEN: ${{ secrets.GHCR_TOKEN }}
         with:
           host: ${{ secrets.SSH_HOST }}
           username: ${{ secrets.SSH_USER }}
