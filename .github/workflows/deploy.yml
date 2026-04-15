@@ -46,7 +46,6 @@ jobs:
           username: ${{ secrets.SSH_USER }}
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           port: ${{ secrets.SSH_PORT }}
-          envs: IMAGE_TAG,GHCR_USERNAME,GHCR_TOKEN
           script: |
             set -e
             mkdir -p /home/deploy/frontend
