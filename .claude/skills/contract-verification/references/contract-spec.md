@@ -25,7 +25,7 @@ EnterRoomPayload   { roomId: string, password: string }
 
 - BE 매핑: `RoomSummaryResponse(id, title, content)`, `RoomEnterResponse(roomId, roomName)`, `CreateRoomRequest(title, password, content)`, `EnterRoomRequest(roomId, password)`.
 - ✅ 현재 FE 인터페이스(`roomApi.ts`)와 BE DTO 필드명 일치 확인됨.
-- ⚠️ **상태코드**: `enter`는 404/401을 반환할 수 있다. FE는 이를 사용자 피드백(없는 방/비번 오류)으로 처리해야 한다. (FE 핸들링 여부 확인 대상.)
+- ✅ **상태코드 처리 확인됨**: `enter`의 404(없는 방)/401(비번 불일치)을 FE `LoginPage.handleEnterConfirm`에서 `err.response.status`로 분기해 사용자 alert로 처리한다.
 
 ## 2. WebSocket (시그널링)
 
@@ -51,20 +51,21 @@ EnterRoomPayload   { roomId: string, password: string }
 - prod: BE `CorsConfig`가 `cors.allowed-origins` 프로퍼티(기본 `localhost:5173`)를 읽음. `allowCredentials(true)`이므로 와일드카드 불가 — 명시 오리진 필요.
 - 허용 메서드: GET/POST/PUT/DELETE/OPTIONS.
 
-## 4. 환경변수 매핑
+## 4. 환경변수 / 배포 매핑 (2026-06-04 갱신 — GHCR + 상대경로 모델)
 
-| FE | BE / 배포 |
-|----|----------|
-| `VITE_API_BASE_URL` | BE REST 호스트 (빌드 시점 번들에 박힘) |
-| `VITE_WS_BASE_URL` | BE WS 호스트 (빌드 시점 번들에 박힘) |
-| (FE prod 배포) | GHCR 이미지 + 서버 `.env`의 `IMAGE_TAG` |
-| (BE prod 배포) | `CORS_ALLOWED_ORIGINS` 시크릿 → 서버 `.env` → `cors.allowed-origins` |
+| 구분 | 값/경로 |
+|------|--------|
+| FE dev | `.env.development`: `VITE_API_BASE_URL=http://localhost:8080`, `VITE_WS_BASE_URL=ws://localhost:8080` |
+| FE prod | `.env.production`: **의도적으로 비움**. 상대경로 사용 → 호스트 nginx(443)가 `/api`·`/socket`을 BE로 프록시 |
+| 배포(공통) | GitHub Actions가 이미지를 GHCR(`:latest`/`:<tag>`)에 push. 서버 감지 에이전트가 pull&재기동 |
+| GHCR 인증 | Actions: 빌트인 `GITHUB_TOKEN`(시크릿 불필요). 서버: PAT `read:packages` |
+| BE CORS | `CORS_ALLOWED_ORIGINS`(서버 `.env`) → `application-prod.yml` `cors.allowed-origins: ${CORS_ALLOWED_ORIGINS:기본값}` → `CorsConfig` |
 
-## 알려진 경계 리스크 (점진적으로 해소)
+## 알려진 경계 리스크 / 상태
 
-1. FE `.env.production`의 `VITE_API_BASE_URL`/`VITE_WS_BASE_URL`이 **비어 있음** → prod 빌드가 BE 호스트를 못 가리킬 수 있다(WARN). nginx 프록시로 상대경로 처리하는지 확인.
-2. FE `deploy.yml`이 `$IMAGE_TAG`를 참조하나 정의되지 않음 → 서버 `.env`에 빈 태그 기록(BLOCKER, 배포). `github.ref_name` 의도로 추정.
-3. BE prod CORS 환경변수 매핑(`cors.allowed-origins: ${CORS_ALLOWED_ORIGINS}`) 누락 가능성 → 매핑 부재 시 prod CORS가 `localhost:5173`로 고정.
+1. ✅ **해소**: FE→BE 연결을 상대경로 + 호스트 nginx 프록시 모델로 확정(`.env.production` 비움이 의도된 설계). 단, **호스트 nginx에 `/api`·`/socket` → BE 프록시 설정이 반드시 있어야 함**(서버 측, README 예시).
+2. ✅ **해소**: FE `$IMAGE_TAG` 미정의 버그 → SSH 배포 단계 제거(GHCR push 모델)로 소멸.
+3. ✅ **해소**: BE prod CORS 매핑 추가(`application-prod.yml`, 폴백 기본값 포함).
 4. BE 인메모리 상태 → 재시작/다중 인스턴스 시 방 소실(INFO, 향후 MSA 과제).
-5. STUN-only → NAT 환경 따라 P2P 실패 가능(INFO).
-6. FE `enter` 실패 상태코드(404/401) 처리 여부(WARN, UX 경계).
+5. STUN-only(TURN 없음) → NAT 환경 따라 P2P 실패 가능(INFO).
+6. 🔜 **미완**: 서버 측 자동 배포(webhook 수신기 + rollback `deploy.sh`)는 다음 단계.

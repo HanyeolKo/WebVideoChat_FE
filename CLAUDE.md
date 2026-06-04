@@ -16,3 +16,4 @@
 | 날짜 | 변경 내용 | 대상 | 사유 |
 |------|----------|------|------|
 | 2026-06-04 | 초기 구성 (fe-engineer/contract-qa/devops + fe-harness 오케스트레이터 + react-feature-dev/contract-verification/cicd-management 스킬) | 전체 | FE/BE 강제 분리 과도기 지원, 점진적 개발·계약 정합성·CI/CD 관리 |
+| 2026-06-04 | CI/CD를 GHCR push 모델로 재구성: deploy.yml(SSH 제거, GITHUB_TOKEN+GHCR, metadata-action), .env.production 상대경로 모델 명시, README(호스트 nginx /api·/socket 프록시). cicd-management/contract-spec 동기화 | 워크플로우·env·README + 하네스 스킬 | 배포 방식을 GHCR+온프레미스 자동트리거로 전환, FE→BE 상대경로 프록시 확정 |

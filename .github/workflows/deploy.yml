@@ -1,23 +1,32 @@
-name: Deploy Frontend by Tag
+name: Build and Push (FE)
+
+# GitHub Actions의 책임은 "이미지 빌드 → GHCR push"까지다.
+# 서버 배포는 온프레미스 서버의 감지 에이전트(webhook 수신기 등)가 담당하며,
+# 이 워크플로우는 서버에 직접 접속(SSH)하지 않는다.
+#
+# - 기본 브랜치(main) push  → :latest 갱신 (서버 자동 배포 트리거 대상)
+# - v* 태그 push            → :<tag> (버전 스냅샷 / 롤백 대상)
 
 on:
   push:
-    tags:
-      - 'v*'
+    branches: [main]
+    tags: ['v*']
   workflow_dispatch:
-  
+
 permissions:
   contents: read
   packages: write
 
+env:
+  IMAGE_NAME: ghcr.io/hanyeolko/webvideochat-fe
+
 jobs:
-  deploy:
+  build-and-push:
+    name: Build & Push image to GHCR
     runs-on: ubuntu-latest
-    env:
-      IMAGE_NAME: ghcr.io/hanyeolko/webvideochat-fe
     steps:
       - name: Checkout
-        uses: actions/checkout@v5
+        uses: actions/checkout@v4
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
@@ -26,33 +35,23 @@ jobs:
         uses: docker/login-action@v3
         with:
           registry: ghcr.io
-          username: ${{ secrets.GHCR_USERNAME }}
-          password: ${{ secrets.GHCR_TOKEN }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Build and push image
+      - name: Docker metadata (tags/labels)
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ env.IMAGE_NAME }}
+          tags: |
+            type=raw,value=latest,enable={{is_default_branch}}
+            type=ref,event=tag
+
+      - name: Build and push
         uses: docker/build-push-action@v6
         with:
           context: .
           file: ./Dockerfile
           push: true
-          tags: |
-            ${{ env.IMAGE_NAME }}:${{ github.ref_name }}
-            ${{ env.IMAGE_NAME }}:latest
-
-      - name: Deploy on on-premise server
-        uses: appleboy/ssh-action@v1.2.0
-        with:
-          host: ${{ secrets.SSH_HOST }}
-          username: ${{ secrets.SSH_USER }}
-          key: ${{ secrets.SSH_PRIVATE_KEY }}
-          port: ${{ secrets.SSH_PORT }}
-          script: |
-            set -e
-            mkdir -p /home/deploy/frontend
-            cd /home/deploy/frontend
-            printf "IMAGE_TAG=%s\n" "$IMAGE_TAG" > .env
-            docker compose down
-            docker compose build --no-cache
-            docker compose up -d
-            sleep 5
-            docker compose ps
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
