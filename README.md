@@ -2,16 +2,30 @@
 
 React 19 + Vite 화상채팅 프론트엔드. Nginx 컨테이너에서 정적 파일로 서빙한다.
 
-## 배포 구조 (GHCR + 온프레미스 자동 트리거)
+## 배포 구조 (GHCR + self-hosted 러너)
 
 ```
-git push (main) ──▶ GitHub Actions ──▶ GHCR(:latest) ──▶ [서버 감지 에이전트] ──▶ pull & 재기동
-git push (v*)   ──▶ GitHub Actions ──▶ GHCR(:<tag>)  (버전 스냅샷 / 롤백 대상)
+push(main) ─▶ build-and-push 잡(GitHub 클라우드 러너): 빌드 → GHCR :latest
+                       │ needs
+                       ▼
+              deploy 잡(배포서버의 self-hosted 러너): docker compose pull && up -d
+push(v*)   ─▶ build-and-push 잡: GHCR :<tag> 보관 (배포는 안 함 / 롤백 대상)
 ```
 
-- **GitHub Actions**(`.github/workflows/deploy.yml`)는 이미지를 빌드해 GHCR(`ghcr.io/hanyeolko/webvideochat-fe`)에 push까지만 한다. 서버에 SSH로 접속하지 않는다.
-- GHCR 로그인은 빌트인 `GITHUB_TOKEN`(+ `permissions: packages: write`)을 사용하므로 **별도 시크릿이 필요 없다.**
-- 서버 배포는 온프레미스 서버의 **감지 에이전트(Watchtower 또는 자체 webhook 수신기)**가 새 `:latest`를 감지해 `docker compose pull && up -d`로 수행한다. (서버 설정, 이 레포 밖)
+- **build-and-push**(클라우드 러너): 이미지를 빌드해 GHCR(`ghcr.io/hanyeolko/webvideochat-fe`)에 push.
+- **deploy**(배포서버의 self-hosted 러너): GHCR에서 pull 후 `DEPLOY_DIR`(`/home/deploy/frontend`)에서 `docker compose pull && up -d`. **SSH·webhook·Watchtower 불필요.**
+- GHCR 로그인은 빌트인 `GITHUB_TOKEN`(+ `packages: write`)을 사용하므로 **별도 시크릿/계정이 필요 없다.**
+- 롤백: 서버 `DEPLOY_DIR`에서 `IMAGE_TAG=<이전태그> docker compose up -d` (서버 compose가 `image: ghcr.io/hanyeolko/webvideochat-fe:${IMAGE_TAG:-latest}` 참조하도록 구성).
+
+### self-hosted 러너 설치 (배포서버, 1회)
+1. repo → Settings → Actions → Runners → **New self-hosted runner** 안내대로 다운로드·`config`(등록 토큰).
+2. 서비스로 상주: `sudo ./svc.sh install && sudo ./svc.sh start`.
+3. 서버 요건: Docker + compose 플러그인, 러너 계정을 `docker` 그룹에 추가.
+4. `DEPLOY_DIR`(`/home/deploy/frontend`)에 `docker-compose.yml`(`app`은 `image: ghcr.io/hanyeolko/webvideochat-fe:${IMAGE_TAG:-latest}`, `3000:80` 매핑) 배치.
+
+### ⚠️ public 레포 보안 (필수 하드닝)
+- 이 워크플로우는 `pull_request`에서 트리거되지 않으며, deploy 잡은 기본 브랜치 push/수동 실행에서만 동작한다(포크 PR이 self-hosted 러너를 못 건드림).
+- repo Settings → Actions → General에서 **fork PR 워크플로우 승인 필요**로 제한할 것.
 
 ## 프론트엔드 ↔ 백엔드 연결 (상대경로 + 호스트 nginx 프록시)
 

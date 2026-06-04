@@ -1,11 +1,14 @@
-name: Build and Push (FE)
+name: Build, Push & Deploy (FE)
 
-# GitHub Actions의 책임은 "이미지 빌드 → GHCR push"까지다.
-# 서버 배포는 온프레미스 서버의 감지 에이전트(webhook 수신기 등)가 담당하며,
-# 이 워크플로우는 서버에 직접 접속(SSH)하지 않는다.
+# 책임 분리
+#  - build-and-push : GitHub 클라우드 러너에서 이미지 빌드 → GHCR push
+#  - deploy         : 배포서버의 self-hosted 러너에서 GHCR pull → docker compose up
 #
-# - 기본 브랜치(main) push  → :latest 갱신 (서버 자동 배포 트리거 대상)
-# - v* 태그 push            → :<tag> (버전 스냅샷 / 롤백 대상)
+# 보안(중요): 이 레포는 public이며 deploy 잡은 self-hosted 러너에서 돈다.
+#   포크 PR이 서버에서 임의 코드를 실행하지 못하도록,
+#   - pull_request 트리거를 두지 않으며,
+#   - deploy 잡은 "기본 브랜치(main) push" 또는 "수동 실행"에서만 동작한다(아래 if).
+#   태그 push는 이미지 보관(:<tag>)만 하고 배포하지 않는다.
 
 on:
   push:
@@ -55,3 +58,29 @@ jobs:
           push: true
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
+
+  deploy:
+    name: Deploy on on-premise server (self-hosted)
+    needs: build-and-push
+    runs-on: [self-hosted]
+    # 기본 브랜치 push 또는 수동 실행에서만 배포 (PR/태그에서는 배포하지 않음)
+    if: >-
+      github.event_name == 'workflow_dispatch' ||
+      (github.event_name == 'push' && github.ref == format('refs/heads/{0}', github.event.repository.default_branch))
+    env:
+      DEPLOY_DIR: /home/deploy/frontend
+    steps:
+      - name: Log in to GHCR (for pull)
+        run: echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u ${{ github.actor }} --password-stdin
+
+      - name: Pull & restart
+        run: |
+          set -e
+          cd "$DEPLOY_DIR"
+          docker compose pull
+          docker compose up -d
+          docker compose ps
+
+      - name: Logout GHCR
+        if: always()
+        run: docker logout ghcr.io

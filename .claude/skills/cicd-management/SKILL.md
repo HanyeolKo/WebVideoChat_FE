@@ -7,14 +7,21 @@ description: WebVideoChat 프론트엔드의 GitHub Actions·Docker·nginx·Vite
 
 WebVideoChat 프론트엔드의 CI/CD와 인프라 파일을 관리한다. **GitHub Actions는 이 스킬·devops 에이전트를 통해 관리한다.** devops 에이전트가 참조한다.
 
-## 배포 아키텍처 (GHCR + 온프레미스 자동 트리거)
+## 배포 아키텍처 (GHCR + self-hosted 러너)
 
-> **GitHub Actions의 책임은 "이미지 빌드 → GHCR push"까지다.** 서버에 SSH로 접속하지 않는다. 서버 배포는 온프레미스 서버의 감지 에이전트(Watchtower 또는 자체 webhook 수신기)가 새 `:latest`를 감지해 `docker compose pull && up -d`로 수행한다(서버 설정, 레포 밖).
+> 빌드와 배포를 잡으로 분리한다. **build-and-push**는 GitHub 클라우드 러너(`ubuntu-latest`)에서 이미지를 빌드해 GHCR에 push, **deploy**는 배포서버의 **self-hosted 러너**에서 `docker compose pull && up -d`를 수행한다. SSH·webhook·Watchtower 불필요.
 
 ```
-push(main) → Actions: docker 빌드(pnpm build) → GHCR :latest → [서버 감지] → pull&재기동
-push(v*)   → Actions: 빌드 → GHCR :<tag>  (버전 스냅샷 / 롤백 대상)
+push(main) → build-and-push(클라우드): docker 빌드(pnpm build) → GHCR :latest
+           → deploy(self-hosted): cd $DEPLOY_DIR && docker compose pull && up -d
+push(v*)   → build-and-push: GHCR :<tag> 보관 (배포 안 함 / 롤백 대상)
 ```
+
+### 보안 — public 레포 + self-hosted 러너 (필수)
+- 포크 PR이 self-hosted 러너에서 임의 코드를 실행하지 못하도록:
+  - 워크플로우에 **`pull_request` 트리거를 절대 두지 않는다.**
+  - deploy 잡에 **`if`로 "기본 브랜치 push 또는 workflow_dispatch"** 조건을 건다.
+- 이 두 가지가 깨지면 public 레포에서 서버가 노출된다. 변경 시 반드시 유지.
 
 ## 현재 파이프라인 (`.github/workflows/deploy.yml`)
 
@@ -22,6 +29,7 @@ push(v*)   → Actions: 빌드 → GHCR :<tag>  (버전 스냅샷 / 롤백 대�
 - `permissions: packages: write` + 빌트인 `GITHUB_TOKEN`으로 GHCR 로그인 → **별도 GHCR 시크릿 불필요.**
 - `docker/metadata-action`으로 태그 결정, `build-push-action`으로 push.
 - 이미지: `ghcr.io/hanyeolko/webvideochat-fe`.
+- **deploy 잡**: `runs-on: [self-hosted]`, `needs: build-and-push`, `env.DEPLOY_DIR=/home/deploy/frontend`. GHCR 로그인(GITHUB_TOKEN) → `docker compose pull && up -d`.
 
 ## 인프라 파일
 
@@ -52,10 +60,15 @@ push(v*)   → Actions: 빌드 → GHCR :<tag>  (버전 스냅샷 / 롤백 대�
 - **비밀 노출 금지.** 시크릿은 이름만.
 - **서버 설정 임의 생성 금지.** 호스트 nginx·감지 에이전트·인증서·`.env`는 레포 밖. README/문서로 절차만 제시.
 
-## 다음 단계 (미완)
+## 서버 준비물 (레포 밖)
+- repo Settings → Actions → Runners에 **self-hosted 러너 등록**(repo별 1개), 서비스 상주.
+- Docker + compose, 러너 계정 `docker` 그룹.
+- `$DEPLOY_DIR`(`/home/deploy/frontend`)에 compose(`image: ghcr.io/hanyeolko/webvideochat-fe:${IMAGE_TAG:-latest}`, 3000:80) 배치.
+- 호스트 nginx(443)에 `/api`·`/socket` → BE 프록시(README 예시).
 
-- 서버 측 **webhook 수신기 + rollback `deploy.sh`** 구성(롤백 유지). 서버 URL/시크릿/롤백 정책 확정 후.
-- PR/푸시용 **CI 검증 워크플로우**(install·lint·typecheck·build) 신설 — 후순위.
+## 다음 단계 (미완)
+- deploy 잡에 **헬스체크 + 자동 롤백** 보강.
+- PR/푸시용 **CI 검증 워크플로우**(install·lint·typecheck·build) — 후순위.
 
 ## 검증 명령
 

@@ -57,7 +57,7 @@ EnterRoomPayload   { roomId: string, password: string }
 |------|--------|
 | FE dev | `.env.development`: `VITE_API_BASE_URL=http://localhost:8080`, `VITE_WS_BASE_URL=ws://localhost:8080` |
 | FE prod | `.env.production`: **의도적으로 비움**. 상대경로 사용 → 호스트 nginx(443)가 `/api`·`/socket`을 BE로 프록시 |
-| 배포(공통) | GitHub Actions가 이미지를 GHCR(`:latest`/`:<tag>`)에 push. 서버 감지 에이전트가 pull&재기동 |
+| 배포(공통) | build-and-push 잡(클라우드)이 GHCR(`:latest`/`:<tag>`) push → deploy 잡(배포서버 self-hosted 러너)이 `docker compose pull && up -d` |
 | GHCR 인증 | Actions: 빌트인 `GITHUB_TOKEN`(시크릿 불필요). 서버: PAT `read:packages` |
 | BE CORS | `CORS_ALLOWED_ORIGINS`(서버 `.env`) → `application-prod.yml` `cors.allowed-origins: ${CORS_ALLOWED_ORIGINS:기본값}` → `CorsConfig` |
 
@@ -68,4 +68,4 @@ EnterRoomPayload   { roomId: string, password: string }
 3. ✅ **해소**: BE prod CORS 매핑 추가(`application-prod.yml`, 폴백 기본값 포함).
 4. BE 인메모리 상태 → 재시작/다중 인스턴스 시 방 소실(INFO, 향후 MSA 과제).
 5. STUN-only(TURN 없음) → NAT 환경 따라 P2P 실패 가능(INFO).
-6. 🔜 **미완**: 서버 측 자동 배포(webhook 수신기 + rollback `deploy.sh`)는 다음 단계.
+6. 배포: GHCR + self-hosted 러너(repo별)로 확정. ⚠️ **public 레포이므로** 워크플로우에 `pull_request` 트리거 금지 + deploy 잡 `if`(기본브랜치 push/dispatch) 유지 필수. 🔜 헬스체크 자동 롤백은 다음 단계.
