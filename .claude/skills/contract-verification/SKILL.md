@@ -13,6 +13,8 @@ FE와 BE를 한 프로젝트에서 강제 분리했기 때문에, 둘 사이 계
 
 기준선(baseline)은 `references/contract-spec.md`에 있다. **이 FE 하네스는 레포 단독으로 완결된다** — BE는 별도 git 레포이며 함께 클론돼 있다는 보장이 없으므로, 검증은 **`contract-spec.md`(기준선) ↔ FE 실제 코드** 대조를 기본으로 한다. 명세와 코드가 다르면 어느 쪽이 낡았는지 판단해 보고한다. BE 실코드는 읽지 않는 것을 전제한다.
 
+> **이 레포의 `contract-spec.md`는 상위 관제탑 정본의 거울(mirror)이다.** 두 레포가 함께 클론된 환경(`WebVideoChat/`)에서는 정본 `WebVideoChat/.claude/skills/contract-sync/references/contract-spec.canonical.md`이 단일 진실이고, 이 파일은 그 사본이다. **계약을 바꿀 때는 이 거울만 고치지 말고** 관제탑 `contract-steward`(또는 `contract-sync` 스킬)를 통해 정본 → 두 레포 거울 순으로 동기화한다. 관제탑 없이 레포 단독으로 실행 중이면, 거울을 갱신하되 "정본·BE 거울 동기화 필요"를 보고에 명시한다.
+
 ## 검증 절차
 
 1. **기준선 로드**: `references/contract-spec.md`(= BE가 제공하는 shape의 기록).

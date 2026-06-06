@@ -1,8 +1,8 @@
-# WebVideoChat FE↔BE 계약 명세 (기준선)
+# WebVideoChat FE↔BE 계약 명세 (FE 거울 / 기준선)
 
-> 이 문서는 FE와 BE 사이의 현재 계약을 기록한 **기준선**이며, 이 FE 레포 하네스의 단일 기준(source of truth)이다. 계약이 바뀌면 이 문서를 갱신한다.
-> BE는 **별도 git 레포**다. 같은 내용의 사본이 BE 레포(`WebVideoChat_BE/.claude/skills/contract-verification/references/`)에도 있으나, 자동 동기화되지 않는다 — 계약 변경 시 **양쪽 레포의 명세를 수동으로 함께 갱신**해야 한다.
-> 최종 확인: 2026-06-04 (초기 작성, 강제 분리 직후 상태 기준).
+> 이 문서는 FE `contract-qa`가 검증 기준선으로 쓰는 계약 명세다. **상위 관제탑 정본의 거울(mirror)** 이다 — 단일 진실은 `WebVideoChat/.claude/skills/contract-sync/references/contract-spec.canonical.md`이고, 이 파일은 그 사본이다.
+> 계약 변경 시 **이 거울만 고치지 마라.** 관제탑 `contract-steward`(또는 `contract-sync` 스킬)를 통해 **정본 먼저 → FE·BE 두 거울 동기화 → 양쪽 contract-qa 재검증** 순서로 진행한다. 관제탑 없이 레포 단독 실행 중이면 거울을 갱신하되 "정본·BE 거울 동기화 필요"를 보고에 명시한다.
+> 최종 확인: 2026-06-06 (관제탑 정본 도입, 거울로 역할 명시). 데이터 기준선은 2026-06-04 강제 분리 직후 상태.
 
 ## 1. REST API
 

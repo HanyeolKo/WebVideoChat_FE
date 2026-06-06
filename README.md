@@ -72,8 +72,8 @@ server {
 
 ## 서버 준비물 (레포 밖)
 - 서버에 GHCR **read 권한 PAT**(`read:packages`)로 `docker login ghcr.io`.
-- `/home/deploy/frontend`의 `docker-compose.yml`이 `image: ghcr.io/hanyeolko/webvideochat-fe:latest`를 참조(3000:80 매핑).
-- 감지 에이전트(Watchtower/webhook) 상주.
+- `/home/deploy/frontend`의 `docker-compose.yml`이 `image: ghcr.io/hanyeolko/webvideochat-fe:${IMAGE_TAG:-latest}`를 참조(3000:80 매핑).
+- 호스트 nginx(443)에 `/api`·`/socket` → BE 프록시 설정(위 예시). (self-hosted 러너가 push 후 직접 pull&up 하므로 Watchtower/webhook은 불필요.)
 
 ## 로컬 개발
 ```
@@ -82,3 +82,44 @@ pnpm dev          # http://localhost:5173 (BE: http://localhost:8080)
 pnpm build        # tsc -b && vite build
 pnpm lint
 ```
+
+---
+
+## AI 주도개발 하네스 (Claude Code)
+
+이 레포는 Claude Code가 프론트엔드를 **안전하고 점진적으로** 진화시키도록 전문 에이전트 팀 하네스를 갖췄다. 하네스는 `harness-setting` 브랜치에서 버전 관리되며, `.claude/agents/`(누가)와 `.claude/skills/`(어떻게)로 구성된다.
+
+### 구성
+
+| 구분 | 이름 | 역할 |
+|------|------|------|
+| 오케스트레이터 | `fe-harness` (스킬) | 요청을 분류해 필요한 에이전트만 팀으로 투입·조율 |
+| 에이전트 | `fe-engineer` | React/TS/Vite/Zustand 코드 구현·수정 (`react-feature-dev` 스킬 참조) |
+| 에이전트 | `contract-qa` | FE↔BE 경계면 정합성 검증 (FE 관점, `contract-verification` 스킬 참조) |
+| 에이전트 | `devops` | GitHub Actions·Docker·nginx·환경변수·배포 (`cicd-management` 스킬 참조) |
+| 스킬 | `react-feature-dev` | 프론트엔드 코드 컨벤션 + 점진적 개발 원칙 |
+| 스킬 | `contract-verification` | 경계면 교차 비교 방법론 (계약 명세 거울 보유) |
+| 스킬 | `cicd-management` | GHCR + self-hosted 러너 배포 파이프라인 관리 |
+
+**실행 모드: 에이전트 팀.** 모든 에이전트는 `model: opus`. 산출물은 `_workspace/`에 단계별로 보존(감사·롤백).
+
+### 핵심 철학 — 점진적 + 되돌리기 쉽게
+
+원래 단일 프로젝트였고 MSA 전환을 위해 FE/BE를 강제 분리한 과도기다. **한 번에 크게 바꾸지 않는다.** BE는 점진적으로 진화하므로 API/WS 경계 레이어(`api/`, `hooks/`)를 BE 변화에 맞춰 안전하게 동기화한다. WS 시그널링 봉투(`{ event, data }`)는 **FE끼리의 계약**이라 한쪽만 바꾸면 깨진다 — 변경 시 contract-qa 검증 필수.
+
+### 상위 통합 관제 하네스 연동 (선택적)
+
+> **이 레포 하네스는 독립적으로 완전히 동작한다.** 이 레포만 클론해서 `fe-harness`로 기능·UI·계약 검증·배포를 모두 처리할 수 있다. 아래의 관제탑은 **선택적 상위 층**일 뿐이며, 없어도 하네스는 그대로 쓸 수 있다(관련 포인터는 모두 "관제탑이 있으면 위임, 없으면 자체 처리·보고"로 분기한다).
+
+두 레포가 함께 클론된 환경(`WebVideoChat/`)에서는 그 위에 **통합 관제 하네스**(관제탑)가 있어, 계약 변경·교차 레포 작업을 조율한다:
+
+- **계약(REST·WS·CORS·env)을 바꾸는 변경**은 단일 레포로 끝나지 않는다. 관제탑의 `contract-steward`가 **계약 정본**(`WebVideoChat/.claude/skills/contract-sync/references/contract-spec.canonical.md`)을 갱신하고, 이 레포의 `contract-spec.md`(거울)와 BE 거울을 동기화한다. 즉 이 레포의 계약 명세는 **정본의 거울**이다.
+- **BE와 동시/순서 배포**가 필요하면 관제탑의 `release-coordinator`가 순서(보통 BE 먼저 → FE)와 롤백을 조율한다.
+- 관제탑 없이 이 레포만 단독으로 작업할 때는, 계약 변경 시 "BE 측 동반 변경 + 양쪽 contract-spec 동기화 필요"를 명시 보고한다.
+
+### 사용법
+
+작업 디렉토리에서 Claude Code를 실행하고 자연어로 요청하면 트리거된다.
+- "입장 실패 시 에러 메시지 표시" → fe-harness가 engineer→contract-qa로 처리.
+- "API 서비스별 분리" → engineer가 "BE가 아직 단일 서비스라 지금은 과함, 작은 첫 스텝"으로 응답.
+- "BE랑 정합성 점검" → contract-qa가 거울 ↔ FE 실코드 대조.
