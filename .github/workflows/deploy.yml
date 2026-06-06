@@ -1,23 +1,35 @@
-name: Deploy Frontend by Tag
+name: Build, Push & Deploy (FE)
+
+# 책임 분리
+#  - build-and-push : GitHub 클라우드 러너에서 이미지 빌드 → GHCR push
+#  - deploy         : 배포서버의 self-hosted 러너에서 GHCR pull → docker compose up
+#
+# 보안(중요): 이 레포는 public이며 deploy 잡은 self-hosted 러너에서 돈다.
+#   포크 PR이 서버에서 임의 코드를 실행하지 못하도록,
+#   - pull_request 트리거를 두지 않으며,
+#   - deploy 잡은 "기본 브랜치(main) push" 또는 "수동 실행"에서만 동작한다(아래 if).
+#   태그 push는 이미지 보관(:<tag>)만 하고 배포하지 않는다.
 
 on:
   push:
-    tags:
-      - 'v*'
+    branches: [main]
+    tags: ['v*']
   workflow_dispatch:
-  
+
 permissions:
   contents: read
   packages: write
 
+env:
+  IMAGE_NAME: ghcr.io/hanyeolko/webvideochat-fe
+
 jobs:
-  deploy:
+  build-and-push:
+    name: Build & Push image to GHCR
     runs-on: ubuntu-latest
-    env:
-      IMAGE_NAME: ghcr.io/hanyeolko/webvideochat-fe
     steps:
       - name: Checkout
-        uses: actions/checkout@v5
+        uses: actions/checkout@v4
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
@@ -26,33 +38,49 @@ jobs:
         uses: docker/login-action@v3
         with:
           registry: ghcr.io
-          username: ${{ secrets.GHCR_USERNAME }}
-          password: ${{ secrets.GHCR_TOKEN }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Build and push image
+      - name: Docker metadata (tags/labels)
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ env.IMAGE_NAME }}
+          tags: |
+            type=raw,value=latest,enable={{is_default_branch}}
+            type=ref,event=tag
+
+      - name: Build and push
         uses: docker/build-push-action@v6
         with:
           context: .
           file: ./Dockerfile
           push: true
-          tags: |
-            ${{ env.IMAGE_NAME }}:${{ github.ref_name }}
-            ${{ env.IMAGE_NAME }}:latest
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
 
-      - name: Deploy on on-premise server
-        uses: appleboy/ssh-action@v1.2.0
-        with:
-          host: ${{ secrets.SSH_HOST }}
-          username: ${{ secrets.SSH_USER }}
-          key: ${{ secrets.SSH_PRIVATE_KEY }}
-          port: ${{ secrets.SSH_PORT }}
-          script: |
-            set -e
-            mkdir -p /home/deploy/frontend
-            cd /home/deploy/frontend
-            printf "IMAGE_TAG=%s\n" "$IMAGE_TAG" > .env
-            docker compose down
-            docker compose build --no-cache
-            docker compose up -d
-            sleep 5
-            docker compose ps
+  deploy:
+    name: Deploy on on-premise server (self-hosted)
+    needs: build-and-push
+    runs-on: [self-hosted]
+    # 기본 브랜치 push 또는 수동 실행에서만 배포 (PR/태그에서는 배포하지 않음)
+    if: >-
+      github.event_name == 'workflow_dispatch' ||
+      (github.event_name == 'push' && github.ref == format('refs/heads/{0}', github.event.repository.default_branch))
+    env:
+      DEPLOY_DIR: /home/deploy/frontend
+    steps:
+      - name: Log in to GHCR (for pull)
+        run: echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u ${{ github.actor }} --password-stdin
+
+      - name: Pull & restart
+        run: |
+          set -e
+          cd "$DEPLOY_DIR"
+          docker compose pull
+          docker compose up -d
+          docker compose ps
+
+      - name: Logout GHCR
+        if: always()
+        run: docker logout ghcr.io
