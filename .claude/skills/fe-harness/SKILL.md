@@ -1,6 +1,6 @@
 ---
 name: fe-harness
-description: WebVideoChat 프론트엔드 작업을 전문 에이전트 팀으로 조율하는 오케스트레이터. React/Vite SPA의 기능 구현·버그 수정·UI 변경·BE 계약 정합성 검증·CI/CD 배포 작업 시 사용. "FE 작업", "프론트 수정", "컴포넌트/훅/스토어 변경", "API 연동", "BE랑 정합성 점검", "배포/워크플로우 수정", "다시 실행/재실행/이어서/보완" 등의 요청 시 반드시 이 스킬을 사용. 단순 질문(코드 위치 찾기 등)은 직접 응답 가능.
+description: WebVideoChat 프론트엔드 작업을 전문 에이전트 팀으로 조율하는 오케스트레이터. React/Vite SPA의 기능 구현·버그 수정·UI 변경·BE 계약 정합성 검증·CI/CD 배포·배포 환경 증상 디버깅·PR 생성/리뷰/병합 작업 시 사용. "FE 작업", "프론트 수정", "컴포넌트/훅/스토어 변경", "API 연동", "BE랑 정합성 점검", "배포/워크플로우 수정", "배포했는데 안돼/증상 디버깅", "PR 생성/병합", "다시 실행/재실행/이어서/보완" 등의 요청 시 반드시 이 스킬을 사용. 단순 질문(코드 위치 찾기 등)은 직접 응답 가능.
 ---
 
 # FE Harness — 프론트엔드 작업 오케스트레이터
@@ -39,8 +39,12 @@ WebVideoChat 프론트엔드 작업을 전문 에이전트 팀으로 조율한�
 | API/WS 연동 변경 | engineer → contract-qa | 구현 → 경계 검증 |
 | 계약/정합성 점검 | contract-qa 단독 | 검증만 |
 | 배포/CI 변경 | devops (→ contract-qa: 환경변수 매핑) | 파이프라인 수정 |
+| 배포 환경 증상 디버깅 | engineer/devops | 원인 추적 → **보고 시 `cicd-management/references/deploy-symptom-triage.md`를 로드해 증상 분류별 "레포 밖 점검 항목"(nginx WS 프록시·TURN/STUN·CORS·env 등) 체크리스트를 자동 생성**해 사용자에게 제시 |
+| PR 생성/리뷰/병합 | `pr-merge-flow`(pr-reviewer·engineer) | PR 생성 → opus 적대적 검수 → blocker 수정(최대 2R) → 조건부 자동병합(blocker 0+CI green). 단일 FE 레포 PR일 때. 직접 `pr-merge-flow` 스킬로도 트리거됨 |
 
 복합 작업은 engineer가 작은 스텝으로 쪼개 순차 진행한다.
+
+> **배포 증상 디버깅 규칙:** "배포했는데 X가 안 된다"류는 레포 코드만 보면 레포 밖 원인(프록시·TURN·CORS·캐시)을 놓치기 쉽다. 반드시 `deploy-symptom-triage.md`로 증상 분류 후 레포 밖 점검 항목을 체크리스트화해 보고한다. 교차 레포 증상이면 관제탑(webvideochat-control)으로 올린다.
 
 ## Phase 2: 팀 실행
 
