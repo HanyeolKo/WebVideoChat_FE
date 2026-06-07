@@ -18,12 +18,13 @@
 
 ```
 RoomSummary        { id: string, title: string, content: string }
-RoomEnterResponse  { roomId: string, roomName: string }
+RoomEnterResponse  { roomId: string, roomName: string, participantCount: number }
 CreateRoomPayload  { title: string, password: string, content: string }
 EnterRoomPayload   { roomId: string, password: string }
 ```
 
-- BE 매핑: `RoomSummaryResponse(id, title, content)`, `RoomEnterResponse(roomId, roomName)`, `CreateRoomRequest(title, password, content)`, `EnterRoomRequest(roomId, password)`.
+- `participantCount`: 응답 시점의 현재 접속 참가자 수. `createRoom`=0(신규 방), `enterRoom`=기존 접속 피어 수(이 사용자의 WS 연결 직전 스냅샷). BE 인메모리 `chatUsers` 크기 기준, null-safe(미초기화 시 0).
+- BE 매핑: `RoomSummaryResponse(id, title, content)`, `RoomEnterResponse(roomId, roomName, participantCount)`, `CreateRoomRequest(title, password, content)`, `EnterRoomRequest(roomId, password)`.
 - ✅ 현재 FE 인터페이스(`roomApi.ts`)와 BE DTO 필드명 일치 확인됨.
 - ✅ **상태코드 처리 확인됨**: `enter`의 404(없는 방)/401(비번 불일치)을 FE `LoginPage.handleEnterConfirm`에서 `err.response.status`로 분기해 사용자 alert로 처리한다.
 
