@@ -9,6 +9,7 @@ export interface RoomSummary {
 export interface RoomEnterResponse {
   roomId: string
   roomName: string
+  participantCount: number
 }
 
 export interface CreateRoomPayload {
