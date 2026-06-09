@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import type { CreateRoomPayload } from '../api/roomApi'
+import Modal from './Modal'
 
 interface CreateRoomModalProps {
   onClose: () => void
@@ -22,8 +23,7 @@ const CreateRoomModal = ({ onClose, onCreate }: CreateRoomModalProps) => {
   }
 
   return (
-    <div className="popup">
-      <button className="closeBtn" onClick={onClose}>X</button>
+    <Modal onClose={onClose}>
       <form onSubmit={handleSubmit}>
         <div className="inline">
           <label>채팅방 이름</label>
@@ -44,7 +44,7 @@ const CreateRoomModal = ({ onClose, onCreate }: CreateRoomModalProps) => {
         </div>
         <button type="submit" disabled={!isSubmittable}>채팅방 생성</button>
       </form>
-    </div>
+    </Modal>
   )
 }
 

@@ -63,7 +63,7 @@ const LoginPage = () => {
   }
 
   return (
-    <div>
+    <div className="login-page">
       <h1>웹 화상 채팅</h1>
 
       <RoomList rooms={rooms} onEnter={handleEnterRequest} />

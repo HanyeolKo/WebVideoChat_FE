@@ -1,22 +1,24 @@
-body {
+/* 로그인(방 목록) 페이지 — 모두 .login-page 하위로 스코프하여 전역 누수 방지. */
+.login-page {
   font-family: Arial, sans-serif;
   background-color: #f0f0f0;
-  margin: 0;
-  padding: 0;
-  height: 100vh;
+  flex: 1;
   display: flex;
+  flex-direction: column;
   align-items: center;
   justify-content: center;
   text-align: center;
+  padding: 24px 16px;
+  box-sizing: border-box;
 }
 
-h1 {
+.login-page h1 {
   font-size: 36px;
   color: #333;
   margin-bottom: 20px;
 }
 
-a {
+.login-page a {
   text-decoration: none;
   display: block;
   margin: 10px auto;
@@ -26,90 +28,84 @@ a {
   border-radius: 5px;
 }
 
-a:hover {
+.login-page a:hover {
   background-color: #3071a9;
 }
 
-input[type='text'],
-input[type='password'] {
+.login-page input[type='text'],
+.login-page input[type='password'] {
   padding: 8px;
   margin: 5px;
   border: 1px solid #ccc;
   border-radius: 3px;
+  box-sizing: border-box;
 }
 
-#createRoom {
-  padding: 10px;
+.login-page #createRoom {
+  padding: 12px 20px;
   background-color: #5cb85c;
   color: #fff;
   border: none;
   border-radius: 5px;
   cursor: pointer;
+  font-size: 16px;
 }
 
-#createRoom:hover {
+.login-page #createRoom:hover {
   background-color: #4cae4c;
 }
 
-.popup {
-  position: fixed;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
-  background-color: #fff;
-  padding: 20px;
-  border: 1px solid #ccc;
-  box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
-  border-radius: 5px;
-  z-index: 999;
+/* 방 목록: 반응형 카드 그리드 (모바일 1열 → 태블릿/데스크탑 다열) */
+.login-page #chatRoomList {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 12px;
+  width: 100%;
+  max-width: 960px;
+  margin: 0 auto 24px;
 }
 
-form {
+.login-page .chatRoomItem {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  align-items: stretch;
+  background: #fff;
+  border: 1px solid #e0e0e0;
+  border-radius: 8px;
+  padding: 16px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
   text-align: left;
 }
 
-label {
-  display: block;
-  margin-bottom: 5px;
-  color: #333;
-}
-
-.inline {
-  margin-bottom: 15px;
-}
-
-button[type='submit'] {
-  padding: 10px;
-  background-color: #5cb85c;
+.login-page .chatRoomItem button {
+  padding: 12px;
+  background-color: #428bca;
   color: #fff;
   border: none;
   border-radius: 5px;
   cursor: pointer;
+  font-size: 16px;
+  width: 100%;
 }
 
-button[type='submit']:hover {
-  background-color: #4cae4c;
+.login-page .chatRoomItem button:hover {
+  background-color: #3071a9;
 }
 
-button[type='submit']:disabled {
-  background-color: darkgrey;
+.login-page .roomContent {
+  color: #777;
+  font-size: 14px;
 }
 
-.errorMsg {
-  display: block;
-  color: red;
+@media (min-width: 768px) {
+  .login-page #chatRoomList {
+    grid-template-columns: repeat(2, 1fr);
+  }
 }
 
-.chatRoomItem {
-  display: inline-block;
-}
-
-.closeBtn {
-  cursor: pointer;
-  position: absolute;
-  top: 12px;
-  right: 12px;
-  font-size: 20pt;
-  background: none;
-  border: none;
+@media (min-width: 1024px) {
+  .login-page #chatRoomList {
+    grid-template-columns: repeat(3, 1fr);
+  }
 }

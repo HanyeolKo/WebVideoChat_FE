@@ -107,7 +107,7 @@ const ChatRoomPage = () => {
   }
 
   return (
-    <>
+    <div className="chatroom-page">
       {toast && (
         <div id="toast" style={{ display: 'block', opacity: 1 }}>
           {toast}
@@ -128,7 +128,7 @@ const ChatRoomPage = () => {
         videoDevices={videoDevices}
         onDeviceChange={handleDeviceChange}
       />
-    </>
+    </div>
   )
 }
 

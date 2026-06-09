@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import Modal from './Modal'
 
 interface EnterRoomModalProps {
   onClose: () => void
@@ -16,8 +17,7 @@ const EnterRoomModal = ({ onClose, onEnter }: EnterRoomModalProps) => {
   }
 
   return (
-    <div className="popup">
-      <button className="closeBtn" onClick={onClose}>X</button>
+    <Modal onClose={onClose}>
       <form onSubmit={handleSubmit}>
         <div className="inline">
           <label>비밀번호</label>
@@ -30,7 +30,7 @@ const EnterRoomModal = ({ onClose, onEnter }: EnterRoomModalProps) => {
         </div>
         <button type="submit" disabled={password === ''}>입장</button>
       </form>
-    </div>
+    </Modal>
   )
 }
 
