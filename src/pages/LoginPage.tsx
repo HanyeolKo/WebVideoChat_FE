@@ -31,7 +31,7 @@ const LoginPage = () => {
   const handleCreate = async (payload: { title: string; password: string; content: string }) => {
     try {
       const res = await createRoom(payload)
-      setRoom(res.roomId, res.roomName)
+      setRoom(res.roomId, res.roomName, res.participantCount)
       navigate(`/room/${res.roomId}`)
     } catch {
       alert('채팅방 생성에 실패했습니다.')
@@ -46,7 +46,7 @@ const LoginPage = () => {
     if (!enterTargetRoomId) return
     try {
       const res = await enterRoom({ roomId: enterTargetRoomId, password })
-      setRoom(res.roomId, res.roomName)
+      setRoom(res.roomId, res.roomName, res.participantCount)
       navigate(`/room/${res.roomId}`)
     } catch (err: unknown) {
       const status = (err as { response?: { status: number } }).response?.status

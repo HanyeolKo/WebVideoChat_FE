@@ -45,6 +45,51 @@
   }
 }
 
+/* 참여 인원 배지 — 헤더 알약 바로 아래, 라이브 점 + 인원수 */
+.chatroom-page #participantCount {
+  position: fixed;
+  top: calc(clamp(14px, 3vh, 26px) + 50px);
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 19;
+  margin: 0;
+  padding: 5px 13px;
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  font-size: 0.78rem;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  color: var(--text-dim);
+  background: var(--glass-fallback);
+  -webkit-backdrop-filter: blur(var(--blur-sm)) saturate(120%);
+  backdrop-filter: blur(var(--blur-sm)) saturate(120%);
+  border: 1px solid var(--glass-border);
+  border-radius: var(--radius-pill);
+  box-shadow: var(--shadow-glass);
+}
+
+.chatroom-page #participantCount::before {
+  content: '';
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: #4ade80;
+  box-shadow: 0 0 8px #4ade80;
+  animation: livePulse 2s ease-in-out infinite;
+}
+
+@keyframes livePulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.4; }
+}
+
+@supports (backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px)) {
+  .chatroom-page #participantCount {
+    background: var(--glass-bg-strong);
+  }
+}
+
 /* --- 비디오 레이아웃 --- */
 .chatroom-page #videoContainer {
   position: relative;

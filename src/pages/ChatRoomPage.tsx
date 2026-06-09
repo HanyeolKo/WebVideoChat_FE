@@ -11,7 +11,7 @@ import '../styles/chatRoom.css'
 const ChatRoomPage = () => {
   const { roomId } = useParams<{ roomId: string }>()
   const navigate = useNavigate()
-  const { roomName, clearRoom } = useRoomStore()
+  const { roomName, participantCount, clearRoom } = useRoomStore()
   const { myStream, muted, cameraOff, setMyStream } = useStreamStore()
 
   const myVideoRef = useRef<HTMLVideoElement>(null)
@@ -31,9 +31,22 @@ const ChatRoomPage = () => {
     navigate('/')
   }, [clearRoom, navigate])
 
-  const { send } = useWebSocket(roomId ?? null, (data) => {
-    handleMessage(data as Parameters<typeof handleMessage>[0])
-  })
+  // 통화 시작은 "미디어 준비 + 소켓 OPEN"이 모두 충족된 시점에 1회만 수행한다.
+  const mediaReadyRef = useRef<MediaStream | null>(null)
+  const socketOpenRef = useRef(false)
+  const startedRef = useRef(false)
+  const tryStartRef = useRef<() => void>(() => {})
+
+  const { send } = useWebSocket(
+    roomId ?? null,
+    (data) => {
+      handleMessage(data as Parameters<typeof handleMessage>[0])
+    },
+    () => {
+      socketOpenRef.current = true
+      tryStartRef.current()
+    },
+  )
 
   const { startCall, endCall, handleMessage, createOffer } = useWebRTC({
     myStream,
@@ -42,12 +55,26 @@ const ChatRoomPage = () => {
     onCallEnd: handleCallEnd,
   })
 
-  // 최초 진입: 미디어 획득 → 소켓 연결 후 offer 전송
+  const tryStart = useCallback(() => {
+    if (startedRef.current) return
+    if (!mediaReadyRef.current || !socketOpenRef.current) return
+    startedRef.current = true
+    void startCall(mediaReadyRef.current)
+  }, [startCall])
+
+  useEffect(() => {
+    tryStartRef.current = tryStart
+  }, [tryStart])
+
+  // 최초 진입: 미디어 획득 → (소켓 OPEN과 함께) offer 전송 트리거
   useEffect(() => {
     const init = async () => {
       const stream = await getMedia()
-      if (stream) setMyStream(stream)
-      await startCall()
+      if (stream) {
+        mediaReadyRef.current = stream
+        setMyStream(stream)
+        tryStart()
+      }
     }
     init()
   // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -88,6 +115,7 @@ const ChatRoomPage = () => {
       )}
 
       <h2>{roomName}</h2>
+      <p id="participantCount">{participantCount}명 참여 중</p>
 
       <div id="videoContainer">
         <video ref={peerVideoRef} id="peerFace" playsInline autoPlay width={300} height={300} />

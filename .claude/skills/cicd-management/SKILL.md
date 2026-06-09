@@ -23,6 +23,17 @@ push(v*)   → build-and-push: GHCR :<tag> 보관 (배포 안 함 / 롤백 대�
   - deploy 잡에 **`if`로 "기본 브랜치 push 또는 workflow_dispatch"** 조건을 건다.
 - 이 두 가지가 깨지면 public 레포에서 서버가 노출된다. 변경 시 반드시 유지.
 
+## 하네스·문서 변경은 배포하지 않는다 (paths-ignore)
+하네스(`.claude/**`)와 문서(`**.md`)는 앱이 아니다 → main에 들어가도 **운영 배포를 트리거하면 안 된다.** 그래서 `deploy.yml`의 `on.push`에 `paths-ignore: ['.claude/**', '**.md']`를 둔다.
+- `paths-ignore`는 푸시의 **모든** 변경 파일이 목록에 들어갈 때만 skip → 하네스만 바뀐 푸시=배포 안 함, **앱+하네스 혼합 푸시=정상 배포**(앱이 바뀌었으니).
+- `.github/**`(워크플로우 자체)는 일부러 무시 목록에서 뺀다 — 워크플로우 변경은 배포로 검증돼야 하므로.
+
+### 브랜치/하네스 운용 규칙 (확정)
+- **하네스 정본은 main에 둔다**(동기 모델). feature 브랜치는 main에서 따므로 항상 최신 하네스를 상속한다 — 별도 merge 의식 불필요.
+- **앱 PR에는 `.claude/**`·`CLAUDE.md`를 포함하지 않는다.** 작업 중 하네스를 만졌다면 그 변경은 앱 커밋에서 제외한다(스테이징에서 뺀다).
+- **하네스만 갱신할 때**: main에서 `harness-setting` 브랜치를 임시로 떠 하네스 변경만 커밋 → PR → main 병합. `paths-ignore` 덕에 이 병합은 배포를 안 돈다. 병합 후 브랜치 삭제(ephemeral).
+- 이렇게 하면 "하네스 변경이 배포를 트리거"하는 문제가 트리거 레벨에서 원천 차단되고, 브랜치마다 하네스가 표류하지도 않는다.
+
 ## 현재 파이프라인 (`.github/workflows/deploy.yml`)
 
 - 트리거: `main` push(→`:latest`), `v*` 태그(→`:<tag>`), `workflow_dispatch`.
