@@ -1,4 +1,7 @@
-/* 화상채팅 페이지 — 모두 .chatroom-page 하위로 스코프하여 전역 누수 방지. */
+/* =========================================================================
+   화상채팅 페이지 — 다크 글래스모피즘.
+   모두 .chatroom-page 하위로 스코프하여 전역 누수 방지.
+   ========================================================================= */
 .chatroom-page {
   display: flex;
   flex-direction: column;
@@ -11,21 +14,103 @@
   box-sizing: border-box;
 }
 
+/* 방 제목 — 상단 글래스 알약 헤더 */
+.chatroom-page h2 {
+  position: fixed;
+  top: clamp(14px, 3vh, 26px);
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 20;
+  margin: 0;
+  padding: 10px 22px;
+  font-size: clamp(1rem, 3vw, 1.3rem);
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  color: var(--text-h);
+  background: var(--glass-fallback);
+  -webkit-backdrop-filter: blur(var(--blur)) saturate(120%);
+  backdrop-filter: blur(var(--blur)) saturate(120%);
+  border: 1px solid var(--glass-border);
+  border-radius: var(--radius-pill);
+  box-shadow: var(--shadow-glass);
+  max-width: min(80vw, 520px);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+@supports (backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px)) {
+  .chatroom-page h2 {
+    background: var(--glass-bg-strong);
+  }
+}
+
+/* 참여 인원 배지 — 헤더 알약 바로 아래, 라이브 점 + 인원수 */
+.chatroom-page #participantCount {
+  position: fixed;
+  top: calc(clamp(14px, 3vh, 26px) + 50px);
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 19;
+  margin: 0;
+  padding: 5px 13px;
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  font-size: 0.78rem;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  color: var(--text-dim);
+  background: var(--glass-fallback);
+  -webkit-backdrop-filter: blur(var(--blur-sm)) saturate(120%);
+  backdrop-filter: blur(var(--blur-sm)) saturate(120%);
+  border: 1px solid var(--glass-border);
+  border-radius: var(--radius-pill);
+  box-shadow: var(--shadow-glass);
+}
+
+.chatroom-page #participantCount::before {
+  content: '';
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: #4ade80;
+  box-shadow: 0 0 8px #4ade80;
+  animation: livePulse 2s ease-in-out infinite;
+}
+
+@keyframes livePulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.4; }
+}
+
+@supports (backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px)) {
+  .chatroom-page #participantCount {
+    background: var(--glass-bg-strong);
+  }
+}
+
+/* --- 비디오 레이아웃 --- */
 .chatroom-page #videoContainer {
   position: relative;
   width: 100%;
   flex: 1;
   min-height: 0;
+  border-radius: var(--radius-lg);
+  overflow: hidden;
 }
 
+/* peer 풀-블리드 */
 .chatroom-page #peerFace {
   width: 100%;
   height: 100%;
   object-fit: cover;
-  background: #000;
+  background:
+    radial-gradient(60% 60% at 50% 40%, rgba(99, 102, 241, 0.18), transparent 70%),
+    #06060d;
 }
 
-/* 내 화면 PIP — 고정 300px 대신 화면비에 맞춰 가변 */
+/* 내 화면 PIP — 글래스 테두리 + 라운드 + 그림자, hover 시 살짝 확대 */
 .chatroom-page #myFace {
   position: absolute;
   bottom: 0;
@@ -33,13 +118,22 @@
   width: clamp(120px, 28vw, 300px);
   height: auto;
   cursor: pointer;
-  transition: width 0.5s, height 0.5s;
+  transition: transform var(--t) var(--ease), width 0.5s var(--ease),
+    height 0.5s var(--ease), box-shadow var(--t) var(--ease),
+    border-color var(--t) var(--ease);
   margin-right: clamp(12px, 3vw, 30px);
-  margin-bottom: clamp(72px, 12vh, 110px);
-  border-radius: 8px;
+  margin-bottom: clamp(96px, 14vh, 130px);
+  border-radius: var(--radius);
   object-fit: cover;
-  background: #222;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.4);
+  background: #14121f;
+  border: 1.5px solid var(--glass-border-strong);
+  box-shadow: var(--shadow-glass), 0 0 0 1px rgba(0, 0, 0, 0.4);
+}
+
+.chatroom-page #myFace:hover {
+  transform: scale(1.04);
+  border-color: var(--accent-2);
+  box-shadow: var(--shadow-glass-lg), 0 0 0 1px var(--accent-glow);
 }
 
 .chatroom-page #myFace.enlarged {
@@ -47,71 +141,193 @@
   height: auto;
 }
 
+/* --- 컨트롤 바: 글래스 알약(pill), 하단 중앙 floating --- */
 .chatroom-page #controls {
   display: flex;
   flex-wrap: wrap;
   justify-content: center;
   align-items: center;
-  gap: 10px;
+  gap: 14px;
   position: fixed;
-  bottom: 0;
-  left: 0;
-  right: 0;
-  padding: 16px 16px calc(16px + env(safe-area-inset-bottom));
+  bottom: calc(clamp(18px, 4vh, 30px) + env(safe-area-inset-bottom));
+  left: 50%;
+  transform: translateX(-50%);
+  width: max-content;
+  max-width: calc(100vw - 24px);
+  padding: 12px 16px;
   box-sizing: border-box;
+  z-index: 30;
+  background: var(--glass-fallback);
+  -webkit-backdrop-filter: blur(var(--blur)) saturate(130%);
+  backdrop-filter: blur(var(--blur)) saturate(130%);
+  border: 1px solid var(--glass-border);
+  border-radius: var(--radius-pill);
+  box-shadow: var(--shadow-glass-lg);
+  animation: controlsIn 0.5s var(--ease-spring) both;
 }
 
+@supports (backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px)) {
+  .chatroom-page #controls {
+    background: var(--glass-bg-strong);
+  }
+}
+
+@keyframes controlsIn {
+  from {
+    opacity: 0;
+    transform: translate(-50%, 16px);
+  }
+  to {
+    opacity: 1;
+    transform: translate(-50%, 0);
+  }
+}
+
+/* 원형 글래스 버튼 */
 .chatroom-page .control-btn {
-  width: 50px;
-  height: 50px;
-  background-color: #3498db;
-  color: #fff;
+  width: 54px;
+  height: 54px;
+  background: rgba(255, 255, 255, 0.08);
+  color: var(--text-h);
+  border: 1px solid var(--glass-border);
   border-radius: 50%;
   display: flex;
   align-items: center;
   justify-content: center;
   cursor: pointer;
   flex: 0 0 auto;
+  overflow: hidden;
+  transition: transform var(--t) var(--ease-spring), background var(--t) var(--ease),
+    border-color var(--t) var(--ease), box-shadow var(--t) var(--ease);
+}
+
+.chatroom-page .control-btn:hover {
+  transform: translateY(-3px);
+  background: rgba(255, 255, 255, 0.14);
+  border-color: var(--glass-border-strong);
+  box-shadow: 0 8px 22px rgba(0, 0, 0, 0.4);
+}
+
+.chatroom-page .control-btn:active {
+  transform: translateY(-1px) scale(0.94);
 }
 
 .chatroom-page .control-btn img {
-  width: 50px;
-  height: 50px;
+  width: 28px;
+  height: 28px;
+  object-fit: contain;
+  pointer-events: none;
 }
 
-.chatroom-page .control-btn img:hover {
-  width: 55px;
-  height: 55px;
+/* 텍스트 폴백(이모지)도 보기 좋게 */
+.chatroom-page .control-btn span {
+  font-size: 1.4rem;
+  line-height: 1;
 }
 
+/* 상태: 음소거 / 카메라 오프 → 액센트 활성 링 */
+.chatroom-page .control-btn.is-active {
+  background: rgba(124, 58, 237, 0.28);
+  border-color: var(--accent-2);
+  box-shadow: 0 0 0 1px var(--accent-glow), 0 6px 18px var(--accent-glow);
+}
+
+.chatroom-page .control-btn.is-active:hover {
+  background: rgba(124, 58, 237, 0.4);
+}
+
+/* 통화 종료: 위험(빨강) 강조 */
+.chatroom-page .control-btn.is-danger {
+  background: rgba(239, 68, 68, 0.22);
+  border-color: rgba(239, 68, 68, 0.55);
+}
+
+.chatroom-page .control-btn.is-danger:hover {
+  background: rgba(239, 68, 68, 0.4);
+  border-color: var(--danger);
+  box-shadow: 0 8px 22px var(--danger-glow);
+}
+
+/* --- 디바이스 select --- */
 .chatroom-page .trackChoose {
   display: flex;
   flex-direction: column;
-  gap: 6px;
+  gap: 8px;
 }
 
 .chatroom-page .trackChoose select {
-  padding: 8px;
-  border-radius: 5px;
-  border: 1px solid #ccc;
+  appearance: none;
+  padding: 9px 30px 9px 12px;
+  border-radius: var(--radius-pill);
+  border: 1px solid var(--glass-border);
+  background-color: rgba(20, 18, 31, 0.92);
+  color: var(--text);
+  font-family: var(--sans);
+  font-size: 0.85rem;
   max-width: 220px;
+  cursor: pointer;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%239ca3af' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 12px center;
+  transition: border-color var(--t-fast) var(--ease), box-shadow var(--t-fast) var(--ease);
 }
 
+.chatroom-page .trackChoose select:focus {
+  outline: none;
+  border-color: var(--accent-2);
+  box-shadow: 0 0 0 3px var(--accent-glow);
+}
+
+.chatroom-page .trackChoose select option {
+  background: #14121f;
+  color: var(--text);
+}
+
+/* --- 토스트: 하단 slide-up + fade 글래스 알약 --- */
 .chatroom-page #toast {
   position: fixed;
-  bottom: 90px;
+  bottom: calc(clamp(90px, 16vh, 120px) + env(safe-area-inset-bottom));
   left: 50%;
   transform: translateX(-50%);
-  background-color: #333;
-  color: #fff;
-  padding: 15px;
-  border-radius: 10px;
+  background: var(--glass-fallback);
+  -webkit-backdrop-filter: blur(var(--blur)) saturate(120%);
+  backdrop-filter: blur(var(--blur)) saturate(120%);
+  color: var(--text-h);
+  padding: 13px 24px;
+  border: 1px solid var(--glass-border-strong);
+  border-radius: var(--radius-pill);
+  box-shadow: var(--shadow-glass-lg);
   z-index: 999;
-  transition: opacity 1s ease-in-out;
+  font-size: 0.95rem;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  animation: toastIn 0.35s var(--ease-spring);
+}
+
+@supports (backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px)) {
+  .chatroom-page #toast {
+    background: var(--glass-bg-strong);
+  }
+}
+
+@keyframes toastIn {
+  from {
+    opacity: 0;
+    transform: translate(-50%, 18px);
+  }
+  to {
+    opacity: 1;
+    transform: translate(-50%, 0);
+  }
 }
 
 /* 모바일: 디바이스 select 풀폭, controls 줄바꿈 시 정렬 */
 @media (max-width: 767px) {
+  .chatroom-page #controls {
+    width: calc(100vw - 24px);
+    border-radius: var(--radius-lg);
+  }
+
   .chatroom-page .trackChoose {
     flex-basis: 100%;
     align-items: stretch;
