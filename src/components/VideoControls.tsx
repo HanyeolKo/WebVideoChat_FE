@@ -40,21 +40,29 @@ const VideoControls = ({ onEndCall, audioDevices, videoDevices, onDeviceChange }
 
   return (
     <div id="controls">
-      <div className="control-btn" onClick={toggleMute}>
+      <div
+        className={`control-btn${muted ? ' is-active' : ''}`}
+        onClick={toggleMute}
+        title={muted ? '음소거 해제' : '음소거'}
+      >
         <ImgOrFallback
           src={muted ? '/img/unmuted.png' : '/img/muted.png'}
           alt="음소거"
           fallback={muted ? '🔊' : '🔇'}
         />
       </div>
-      <div className="control-btn" onClick={toggleCamera}>
+      <div
+        className={`control-btn${cameraOff ? ' is-active' : ''}`}
+        onClick={toggleCamera}
+        title={cameraOff ? '카메라 켜기' : '카메라 끄기'}
+      >
         <ImgOrFallback
           src={cameraOff ? '/img/cameraOn.png' : '/img/cameraOff.png'}
           alt="카메라"
           fallback={cameraOff ? '📷' : '🚫'}
         />
       </div>
-      <div className="control-btn" onClick={onEndCall}>
+      <div className="control-btn is-danger" onClick={onEndCall} title="통화 종료">
         <ImgOrFallback src="/img/callEnd.png" alt="통화종료" fallback="📵" />
       </div>
       <div className="trackChoose">

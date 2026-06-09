@@ -7,7 +7,7 @@ interface RoomListProps {
 
 const RoomList = ({ rooms, onEnter }: RoomListProps) => {
   if (rooms.length === 0) {
-    return <p>생성된 채팅방이 없습니다.</p>
+    return <p className="room-empty">생성된 채팅방이 없습니다.</p>
   }
 
   return (

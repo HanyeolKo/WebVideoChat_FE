@@ -65,6 +65,9 @@ const LoginPage = () => {
   return (
     <div className="login-page">
       <h1>웹 화상 채팅</h1>
+      <p className="login-sub">
+        링크 하나로 시작하는 실시간 화상 대화. 방을 만들거나 골라서 바로 입장하세요.
+      </p>
 
       <RoomList rooms={rooms} onEnter={handleEnterRequest} />
 
