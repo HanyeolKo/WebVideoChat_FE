@@ -1,0 +1,100 @@
+/* 재사용 모달: 반투명 백드롭 + 중앙 카드. 충돌 없는 고유 클래스명 사용. */
+.modal-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+  z-index: 1000;
+}
+
+.modal-card {
+  position: relative;
+  background: #fff;
+  color: #333;
+  padding: 24px;
+  border-radius: 8px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.25);
+  width: min(92vw, 420px);
+  max-height: 90vh;
+  overflow-y: auto;
+  box-sizing: border-box;
+  text-align: left;
+  font-family: Arial, sans-serif;
+}
+
+.modal-close {
+  cursor: pointer;
+  position: absolute;
+  top: 8px;
+  right: 12px;
+  font-size: 22px;
+  line-height: 1;
+  background: none;
+  border: none;
+  color: #888;
+  padding: 4px 8px;
+}
+
+.modal-close:hover {
+  color: #333;
+}
+
+/* 모달 내부 폼 — 기존 login.css 전역 폼 규칙을 모달 스코프로 흡수. */
+.modal-card form {
+  text-align: left;
+}
+
+.modal-card label {
+  display: block;
+  margin-bottom: 5px;
+  color: #333;
+}
+
+.modal-card .inline {
+  margin-bottom: 15px;
+}
+
+.modal-card input[type='text'],
+.modal-card input[type='password'] {
+  padding: 10px;
+  border: 1px solid #ccc;
+  border-radius: 3px;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.modal-card button[type='submit'] {
+  padding: 12px;
+  background-color: #5cb85c;
+  color: #fff;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+  width: 100%;
+  font-size: 16px;
+}
+
+.modal-card button[type='submit']:hover {
+  background-color: #4cae4c;
+}
+
+.modal-card button[type='submit']:disabled {
+  background-color: darkgrey;
+  cursor: not-allowed;
+}
+
+.modal-card .errorMsg {
+  display: block;
+  color: red;
+  margin-top: 4px;
+  font-size: 14px;
+}
+
+@media (min-width: 1024px) {
+  .modal-card {
+    width: 420px;
+  }
+}

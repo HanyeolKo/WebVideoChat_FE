@@ -1,80 +1,105 @@
-body {
+/* 화상채팅 페이지 — 모두 .chatroom-page 하위로 스코프하여 전역 누수 방지. */
+.chatroom-page {
   display: flex;
   flex-direction: column;
   align-items: center;
-  justify-content: center;
-  height: 100vh;
+  flex: 1;
+  min-height: 0;
   margin: 0;
-}
-
-#videoContainer {
   position: relative;
   width: 100%;
-  height: 100%;
+  box-sizing: border-box;
 }
 
-#myFace {
+.chatroom-page #videoContainer {
+  position: relative;
+  width: 100%;
+  flex: 1;
+  min-height: 0;
+}
+
+.chatroom-page #peerFace {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  background: #000;
+}
+
+/* 내 화면 PIP — 고정 300px 대신 화면비에 맞춰 가변 */
+.chatroom-page #myFace {
   position: absolute;
   bottom: 0;
   right: 0;
-  width: 300px;
+  width: clamp(120px, 28vw, 300px);
   height: auto;
   cursor: pointer;
   transition: width 0.5s, height 0.5s;
-  margin-right: 30px;
-  margin-bottom: 30px;
+  margin-right: clamp(12px, 3vw, 30px);
+  margin-bottom: clamp(72px, 12vh, 110px);
+  border-radius: 8px;
+  object-fit: cover;
+  background: #222;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.4);
 }
 
-#myFace.enlarged {
-  width: 600px;
+.chatroom-page #myFace.enlarged {
+  width: clamp(200px, 50vw, 600px);
   height: auto;
 }
 
-#peerFace {
-  width: 100%;
-  height: 100%;
-}
-
-#controls {
+.chatroom-page #controls {
   display: flex;
+  flex-wrap: wrap;
   justify-content: center;
+  align-items: center;
+  gap: 10px;
   position: fixed;
-  bottom: 20px;
-  left: 50%;
-  transform: translateX(-50%);
+  bottom: 0;
+  left: 0;
+  right: 0;
+  padding: 16px 16px calc(16px + env(safe-area-inset-bottom));
+  box-sizing: border-box;
 }
 
-.control-btn {
+.chatroom-page .control-btn {
   width: 50px;
   height: 50px;
   background-color: #3498db;
   color: #fff;
   border-radius: 50%;
-  margin: 0 10px;
   display: flex;
   align-items: center;
   justify-content: center;
   cursor: pointer;
+  flex: 0 0 auto;
 }
 
-.control-btn img {
+.chatroom-page .control-btn img {
   width: 50px;
   height: 50px;
 }
 
-.control-btn img:hover {
+.chatroom-page .control-btn img:hover {
   width: 55px;
   height: 55px;
 }
 
-.trackChoose {
-  display: grid;
+.chatroom-page .trackChoose {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
 }
 
-#toast {
-  display: none;
+.chatroom-page .trackChoose select {
+  padding: 8px;
+  border-radius: 5px;
+  border: 1px solid #ccc;
+  max-width: 220px;
+}
+
+.chatroom-page #toast {
   position: fixed;
-  bottom: 75px;
+  bottom: 90px;
   left: 50%;
   transform: translateX(-50%);
   background-color: #333;
@@ -82,6 +107,18 @@ body {
   padding: 15px;
   border-radius: 10px;
   z-index: 999;
-  opacity: 0;
   transition: opacity 1s ease-in-out;
+}
+
+/* 모바일: 디바이스 select 풀폭, controls 줄바꿈 시 정렬 */
+@media (max-width: 767px) {
+  .chatroom-page .trackChoose {
+    flex-basis: 100%;
+    align-items: stretch;
+  }
+
+  .chatroom-page .trackChoose select {
+    max-width: none;
+    width: 100%;
+  }
 }
